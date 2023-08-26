@@ -94,7 +94,7 @@ int LoadCOFF(uint8_t* data) {
 	for (WORD i = 0; i < header->NumberOfSections; i++) {
 		for (WORD j = 0; j < sections[i].NumberOfRelocations; j++) {
 
-			auto coffReloc = reinterpret_cast<COFF_RELOCATION*>(data + sections[i].PointerToRelocations + sizeof(COFF_RELOCATION) * j);
+			auto coffReloc = reinterpret_cast<IMAGE_RELOCATION*>(data + sections[i].PointerToRelocations + sizeof(IMAGE_RELOCATION) * j);
 
 			// "where" to write (which memory needs updating)
 			void* where = sectionsBase[i] + coffReloc->VirtualAddress;

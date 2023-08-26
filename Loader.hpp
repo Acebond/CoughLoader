@@ -8,13 +8,6 @@ int LoadCOFF(unsigned char* COFF_data);
 typedef void (*COFFEntry)(void);
 
 #pragma pack(push,1)
-/* size of 10 */
-typedef struct _COFF_RELOCATION {
-    uint32_t VirtualAddress;
-    uint32_t SymbolTableIndex;
-    uint16_t Type;
-} COFF_RELOCATION;
-
 /* size of 18 */
 typedef struct _COFF_SYMBOL {
     union {
