@@ -1,8 +1,6 @@
 #pragma once
 #include <cstdint>
 
-#define TOKEN_imp "__imp_"
-
 int LoadCOFF(unsigned char* COFF_data);
 
 typedef void (*COFFEntry)(void);

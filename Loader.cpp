@@ -20,19 +20,17 @@ std::string GetSymbolName(COFF_SYMBOL* symbol, char* stringsTable) {
 }
 
 uint64_t ResolveExternal(std::string symbolName) {
-	auto start = strlen(TOKEN_imp);
-	auto end = symbolName.find('$');
 
 	std::string DLLname;
 	std::string FuncName;
 
-	if (end == std::string::npos) {
+	if (auto split = symbolName.find('$'); split == std::string::npos) {
 		DLLname = "kernel32";
-		FuncName = symbolName.substr(start, symbolName.length() - start);
+		FuncName = symbolName;
 	}
 	else {
-		DLLname = symbolName.substr(start, end - start);
-		FuncName = symbolName.substr(end + 1, symbolName.length() - end + 1);
+		DLLname = symbolName.substr(0, split);
+		FuncName = symbolName.substr(split + 1);
 	}
 
 	HMODULE lib = LoadLibraryA(DLLname.c_str());
@@ -81,8 +79,9 @@ int LoadCOFF(uint8_t* data) {
 		}
 
 		// resolve external functions
-		if (symbolName.starts_with(TOKEN_imp)) {
-			GOT[i] = ResolveExternal(symbolName);
+		constexpr auto importPrefixToken = "__imp_";
+		if (symbolName.starts_with(importPrefixToken)) {
+			GOT[i] = ResolveExternal(symbolName.substr(strlen(importPrefixToken)));
 		}
 		else if (symbolName == "go") {
 			int section = symbolTable[i].SectionNumber - 1;
