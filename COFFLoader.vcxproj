@@ -81,6 +81,12 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>cl.exe /nologo /c /GS- /Fo"$(Platform)\$(Configuration)\test.o" /MT /Tc test.c</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Build example COFF</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -97,6 +103,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>cl.exe /nologo /c /GS- /Fo"$(Platform)\$(Configuration)\test.o" /MT /Tc test.c</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Build example COFF</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -110,6 +122,12 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>cl.exe /nologo /c /GS- /Fo"$(Platform)\$(Configuration)\test.o" /MT /Tc test.c</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Build example COFF</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -127,6 +145,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>cl.exe /nologo /c /GS- /Fo"$(Platform)\$(Configuration)\test.o" /MT /Tc test.c</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Build example COFF</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Loader.hpp" />
