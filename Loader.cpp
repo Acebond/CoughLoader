@@ -40,7 +40,7 @@ uint64_t ResolveExternal(std::string symbolName) {
 	return 0;
 }
 
-int LoadCOFF(uint8_t* data) {
+int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 
 	auto header = reinterpret_cast<PIMAGE_FILE_HEADER>(data);
 	auto sections = reinterpret_cast<PIMAGE_SECTION_HEADER>(data + sizeof(IMAGE_FILE_HEADER));
@@ -117,8 +117,8 @@ int LoadCOFF(uint8_t* data) {
 					if (GOT[coffReloc->SymbolTableIndex] != NULL) {
 						*reinterpret_cast<uint32_t*>(where) = (uint64_t)(&GOT[coffReloc->SymbolTableIndex]) - ((int32_t)where + 4);
 					}
-					else {
-						uint64_t wtf = (uint64_t)sectionsBase[symbolTable[coffReloc->SymbolTableIndex].SectionNumber - 1] + symbolTable[coffReloc->SymbolTableIndex].Value;
+					else if (int sectionIndex = symbolTable[coffReloc->SymbolTableIndex].SectionNumber - 1; sectionIndex >= 0) {
+						uint64_t wtf = (uint64_t)sectionsBase[sectionIndex] + symbolTable[coffReloc->SymbolTableIndex].Value;
 						*reinterpret_cast<uint32_t*>(where) = offset32 + wtf - ((int32_t)where + 4);
 					}
 					break;
@@ -137,7 +137,7 @@ int LoadCOFF(uint8_t* data) {
 	if (LaunchGO == nullptr) {
 		return -1;
 	} else {
-		LaunchGO();
+		LaunchGO(argc, argv);
 	}
 
 	for (WORD i = 0; i < header->NumberOfSections; i++) {

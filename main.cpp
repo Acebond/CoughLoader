@@ -7,7 +7,7 @@
 int main(int argc, char* argv[]) {
 
 	if (argc < 2) {
-		printf("[!] ERROR! Run: %s <coff_file>\n", argv[0]);
+		printf("[!] ERROR! Run: %s <coff_file> <coff_args>\n", argv[0]);
 		return -1;
 	}
 
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	if (LoadCOFF(static_cast<uint8_t*>(COFF_data))) {
+	if (LoadCOFF(static_cast<uint8_t*>(COFF_data), argc - 2, argv + 2)) {
 		printf("[!] Something went wrong\n");
 	}
 

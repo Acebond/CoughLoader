@@ -1,9 +1,9 @@
 #pragma once
 #include <cstdint>
 
-int LoadCOFF(uint8_t* data);
+int LoadCOFF(uint8_t* data, int argc, char* argv[]);
 
-typedef void (*COFFEntry)(void);
+typedef void (*COFFEntry)(int, char*[]);
 
 #pragma pack(push,1)
 /* size of 18 */
