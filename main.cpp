@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	if (LoadCOFF((unsigned char*)COFF_data)) {
+	if (LoadCOFF(static_cast<uint8_t*>(COFF_data))) {
 		printf("[!] Something went wrong\n");
 	}
 

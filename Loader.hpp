@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-int LoadCOFF(unsigned char* COFF_data);
+int LoadCOFF(uint8_t* data);
 
 typedef void (*COFFEntry)(void);
 
