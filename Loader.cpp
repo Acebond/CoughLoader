@@ -93,10 +93,11 @@ int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 	for (WORD i = 0; i < header->NumberOfSections; i++) {
 		for (WORD j = 0; j < sections[i].NumberOfRelocations; j++) {
 
-			auto coffReloc = reinterpret_cast<IMAGE_RELOCATION*>(data + sections[i].PointerToRelocations + sizeof(IMAGE_RELOCATION) * j);
+			auto coffReloc = reinterpret_cast<PIMAGE_RELOCATION>(data + sections[i].PointerToRelocations + sizeof(IMAGE_RELOCATION) * j);
 
 			// "where" to write (which memory needs updating)
-			void* where = sectionsBase[i] + coffReloc->VirtualAddress;
+			uintptr_t where = reinterpret_cast<uintptr_t>(sectionsBase[i] + coffReloc->VirtualAddress);
+			uint32_t whereVal = static_cast<uint32_t>(where);
 
 			// storage for offsets at relocation position, 64- and 32-bit
 			int64_t offset64 = *reinterpret_cast<int64_t*>(where);
@@ -106,25 +107,25 @@ int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 
 			switch (coffReloc->Type) {
 				case IMAGE_REL_AMD64_ADDR64:
-					*reinterpret_cast<uint64_t*>(where) = offset64 + memAddress;
+					*reinterpret_cast<uint64_t*>(where) = static_cast<uint64_t>(offset64 + memAddress);
 					break;
 
 				case IMAGE_REL_AMD64_ADDR32NB: 
-					*reinterpret_cast<uint32_t*>(where) = offset32 + memAddress - ((int32_t)where + 4);
+					*reinterpret_cast<uint32_t*>(where) = static_cast<uint32_t>(offset32 + memAddress - (whereVal + 4));
 					break;
 
 				case IMAGE_REL_AMD64_REL32:
 					if (GOT[coffReloc->SymbolTableIndex] != NULL) {
-						*reinterpret_cast<uint32_t*>(where) = (uint64_t)(&GOT[coffReloc->SymbolTableIndex]) - ((int32_t)where + 4);
+						*reinterpret_cast<uint32_t*>(where) = static_cast<uint32_t>(reinterpret_cast<uint64_t>(&GOT[coffReloc->SymbolTableIndex]) - (whereVal + 4));
 					}
 					else if (int sectionIndex = symbolTable[coffReloc->SymbolTableIndex].SectionNumber - 1; sectionIndex >= 0) {
 						uint64_t wtf = (uint64_t)sectionsBase[sectionIndex] + symbolTable[coffReloc->SymbolTableIndex].Value;
-						*reinterpret_cast<uint32_t*>(where) = offset32 + wtf - ((int32_t)where + 4);
+						*reinterpret_cast<uint32_t*>(where) = static_cast<uint32_t>(offset32 + wtf - (whereVal + 4));
 					}
 					break;
 				
 				case IMAGE_REL_AMD64_REL32_4:
-					*reinterpret_cast<uint32_t*>(where) = offset32 + memAddress - ((int32_t)where + 4 + 4);
+					*reinterpret_cast<uint32_t*>(where) = static_cast<uint32_t>(offset32 + memAddress - (whereVal + 4 + 4));
 					break;
 
 				default:
