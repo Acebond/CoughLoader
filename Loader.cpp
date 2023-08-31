@@ -93,28 +93,22 @@ int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 
 			auto coffReloc = reinterpret_cast<PIMAGE_RELOCATION>(data + sections[i].PointerToRelocations + sizeof(IMAGE_RELOCATION) * j);
 			auto symbol = symbolTable[coffReloc->SymbolTableIndex];
-			
-			// "where" to write (which memory needs updating)
-			uintptr_t where = reinterpret_cast<uintptr_t>(sectionsBase[i] + coffReloc->VirtualAddress);
-			uint32_t whereVal = static_cast<uint32_t>(where);
-
-			// storage for offsets at relocation position, 64- and 32-bit
-			int64_t offset64 = *reinterpret_cast<int64_t*>(where);
-			int32_t offset32 = *reinterpret_cast<int32_t*>(where);
+			auto relocAddr = reinterpret_cast<uintptr_t>(sectionsBase[i] + coffReloc->VirtualAddress);
+			auto relocVal = static_cast<uint32_t>(relocAddr);
 
 			switch (coffReloc->Type) {
 
 				case IMAGE_REL_AMD64_ADDR32NB: 
-					*reinterpret_cast<uint32_t*>(where) = 0;
+					*reinterpret_cast<uint32_t*>(relocAddr) = symbol.Value;
 					break;
 
 				case IMAGE_REL_AMD64_REL32:
 					if (GOT[coffReloc->SymbolTableIndex] != NULL) {
-						*reinterpret_cast<uint32_t*>(where) = static_cast<uint32_t>(reinterpret_cast<uint64_t>(&GOT[coffReloc->SymbolTableIndex]) - (whereVal + 4));
+						*reinterpret_cast<uint32_t*>(relocAddr) = static_cast<uint32_t>(reinterpret_cast<uint64_t>(&GOT[coffReloc->SymbolTableIndex]) - (relocVal + 4));
 					}
-					else if (int sectionIndex = symbolTable[coffReloc->SymbolTableIndex].SectionNumber - 1; sectionIndex >= 0) {
-						uint64_t wtf = (uint64_t)sectionsBase[sectionIndex] + symbolTable[coffReloc->SymbolTableIndex].Value;
-						*reinterpret_cast<uint32_t*>(where) = static_cast<uint32_t>(offset32 + wtf - (whereVal + 4));
+					else if (int sectionIndex = symbol.SectionNumber - 1; sectionIndex >= 0) {
+						uint64_t wtf = *reinterpret_cast<int32_t*>(relocAddr) + reinterpret_cast<uint64_t>(sectionsBase[sectionIndex]);
+						*reinterpret_cast<uint32_t*>(relocAddr) = static_cast<uint32_t>(wtf + symbol.Value - (relocVal + 4));
 					}
 					break;
 
