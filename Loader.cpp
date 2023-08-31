@@ -47,7 +47,7 @@ int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 	auto symbolTable = reinterpret_cast<COFF_SYMBOL*>(data + header->PointerToSymbolTable);
 	auto stringsTable = (char*)(data + header->PointerToSymbolTable + header->NumberOfSymbols * sizeof(COFF_SYMBOL));
 
-	auto sectionsBase = std::vector<char*>(header->NumberOfSections);
+	auto sectionsBase = std::vector<LPVOID>(header->NumberOfSections);
 	auto GOT = std::vector<uint64_t>(header->NumberOfSymbols);
 	COFFEntry LaunchGO = nullptr;
 	
@@ -59,7 +59,7 @@ int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 
 		DWORD InMemorySize = sections[i].SizeOfRawData + (0x1000 - sections[i].SizeOfRawData % 0x1000); // align to page size
 
-		sectionsBase[i] = (char*)VirtualAlloc(NULL, InMemorySize, MEM_COMMIT | MEM_RESERVE,
+		sectionsBase[i] = VirtualAlloc(NULL, InMemorySize, MEM_COMMIT | MEM_RESERVE,
 			(sections[i].Characteristics & IMAGE_SCN_CNT_CODE) ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE);
 
 		if (sections[i].PointerToRawData > 0) {
@@ -83,7 +83,7 @@ int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 		}
 		else if (symbolName == "go") {
 			int section = symbolTable[i].SectionNumber - 1;
-			LaunchGO = (decltype(LaunchGO))(sectionsBase[section] + symbolTable[i].Value);
+			LaunchGO = reinterpret_cast<decltype(LaunchGO)>(reinterpret_cast<uintptr_t>(sectionsBase[section]) + symbolTable[i].Value);
 		}
 	}
 
@@ -93,7 +93,7 @@ int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 
 			auto coffReloc = reinterpret_cast<PIMAGE_RELOCATION>(data + sections[i].PointerToRelocations + sizeof(IMAGE_RELOCATION) * j);
 			auto symbol = symbolTable[coffReloc->SymbolTableIndex];
-			auto relocAddr = reinterpret_cast<uintptr_t>(sectionsBase[i] + coffReloc->VirtualAddress);
+			auto relocAddr = reinterpret_cast<uintptr_t>(sectionsBase[i]) + coffReloc->VirtualAddress;
 			auto relocVal = static_cast<uint32_t>(relocAddr);
 
 			switch (coffReloc->Type) {
@@ -125,7 +125,7 @@ int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 	}
 
 	for (WORD i = 0; i < header->NumberOfSections; i++) {
-		VirtualFree((LPVOID)sectionsBase[i], 0, MEM_RELEASE);
+		VirtualFree(sectionsBase[i], 0, MEM_RELEASE);
 	}
 	
 	return 0;
