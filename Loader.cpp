@@ -67,18 +67,16 @@ int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 		}
 	}
 
-	
 	for (DWORD i = 0; i < header->NumberOfSymbols; i++) {
 
-		std::string symbolName = GetSymbolName(&symbolTable[i], stringsTable);
+		auto symbolName = GetSymbolName(&symbolTable[i], stringsTable);
 
-		// Skip IMAGE_SYM_ABSOLUTE and IMAGE_SYM_DEBUG symbols (FIXME :)
-		// skip IMAGE_SYM_UNDEFINED IMAGE_SYM_DEBUG
+		// Skip IMAGE_SYM_ABSOLUTE, IMAGE_SYM_DEBUG, IMAGE_SYM_UNDEFINED symbols
 		if (symbolTable[i].SectionNumber > 0xFF || symbolName == "__UNDEFINED") {
 			continue;
 		}
 
-		// resolve external functions
+		// Resolve external functions
 		constexpr auto importPrefixToken = "__imp_";
 		if (symbolName.starts_with(importPrefixToken)) {
 			GOT[i] = ResolveExternal(symbolName.substr(strlen(importPrefixToken)));
@@ -94,7 +92,8 @@ int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 		for (WORD j = 0; j < sections[i].NumberOfRelocations; j++) {
 
 			auto coffReloc = reinterpret_cast<PIMAGE_RELOCATION>(data + sections[i].PointerToRelocations + sizeof(IMAGE_RELOCATION) * j);
-
+			auto symbol = symbolTable[coffReloc->SymbolTableIndex];
+			
 			// "where" to write (which memory needs updating)
 			uintptr_t where = reinterpret_cast<uintptr_t>(sectionsBase[i] + coffReloc->VirtualAddress);
 			uint32_t whereVal = static_cast<uint32_t>(where);
@@ -103,15 +102,10 @@ int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 			int64_t offset64 = *reinterpret_cast<int64_t*>(where);
 			int32_t offset32 = *reinterpret_cast<int32_t*>(where);
 
-			uint64_t memAddress = (uint64_t)sectionsBase[i] + sections[coffReloc->SymbolTableIndex].PointerToRawData;
-
 			switch (coffReloc->Type) {
-				case IMAGE_REL_AMD64_ADDR64:
-					*reinterpret_cast<uint64_t*>(where) = static_cast<uint64_t>(offset64 + memAddress);
-					break;
 
 				case IMAGE_REL_AMD64_ADDR32NB: 
-					*reinterpret_cast<uint32_t*>(where) = static_cast<uint32_t>(offset32 + memAddress - (whereVal + 4));
+					*reinterpret_cast<uint32_t*>(where) = 0;
 					break;
 
 				case IMAGE_REL_AMD64_REL32:
@@ -123,14 +117,9 @@ int LoadCOFF(uint8_t* data, int argc, char *argv[]) {
 						*reinterpret_cast<uint32_t*>(where) = static_cast<uint32_t>(offset32 + wtf - (whereVal + 4));
 					}
 					break;
-				
-				case IMAGE_REL_AMD64_REL32_4:
-					*reinterpret_cast<uint32_t*>(where) = static_cast<uint32_t>(offset32 + memAddress - (whereVal + 4 + 4));
-					break;
 
 				default:
 					printf("[!] ERROR! Reloc type %#x is not supported (SECT = %d : REL = %d)\n", coffReloc->Type, i, j);
-					return -1;
 			}
 		}
 	}
